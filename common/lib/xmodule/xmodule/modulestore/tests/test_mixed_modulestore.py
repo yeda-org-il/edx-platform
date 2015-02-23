@@ -15,6 +15,8 @@ from uuid import uuid4
 # before importing the module
 # TODO remove this import and the configuration -- xmodule should not depend on django!
 from django.conf import settings
+# This import breaks this test file when run separately. The test is currently skipped below -
+# so remove this import for now. (PLAT-449)
 from mock_django import mock_signal_receiver
 from nose.plugins.attrib import attr
 import pymongo
