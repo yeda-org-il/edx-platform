@@ -1,7 +1,8 @@
+# coding: utf-8
 """
 Acceptance tests for Studio's Setting pages
 """
-
+from __future__ import unicode_literals
 from nose.plugins.attrib import attr
 
 from base_studio_test import StudioCourseTest
@@ -9,6 +10,7 @@ from bok_choy.promise import EmptyPromise
 from ...fixtures.course import XBlockFixtureDesc
 from ..helpers import create_user_partition_json
 from ...pages.studio.overview import CourseOutlinePage
+from ...pages.studio.settings import SettingsPage
 from ...pages.studio.settings_advanced import AdvancedSettingsPage
 from ...pages.studio.settings_group_configurations import GroupConfigurationsPage
 from unittest import skip
@@ -404,3 +406,38 @@ class AdvancedSettingsValidationTest(StudioCourseTest):
         for field in displayed_fields:
             if field not in expected_fields:
                 self.fail("Field '{}' not expected for Advanced Settings display.".format(field))
+
+@attr('shard_1')
+class ContentLicenseTest(StudioCourseTest):
+    def setUp(self):
+        super(ContentLicenseTest, self).setUp()
+        self.outline_page = CourseOutlinePage(
+            self.browser,
+            self.course_info['org'],
+            self.course_info['number'],
+            self.course_info['run']
+        )
+        self.settings_page = SettingsPage(
+            self.browser,
+            self.course_info['org'],
+            self.course_info['number'],
+            self.course_info['run']
+        )
+        self.outline_page.visit()
+
+    def test_empty_license(self):
+        self.assertEqual(self.outline_page.license, "None")
+
+    def test_arr_license(self):
+        self.outline_page.edit_course_start_date()
+        self.settings_page.set_course_license("all-rights-reserved")
+        self.settings_page.save_changes()
+        self.outline_page.visit()
+        self.assertEqual(self.outline_page.license, "© All Rights Reserved")
+
+    def test_cc_license(self):
+        self.outline_page.edit_course_start_date()
+        self.settings_page.set_course_license("creative-commons")
+        self.settings_page.save_changes()
+        self.outline_page.visit()
+        self.assertEqual(self.outline_page.license, "Some Rights Reserved")
