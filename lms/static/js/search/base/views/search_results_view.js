@@ -53,6 +53,7 @@ define([
                 this.$el.find('.search-load-next').remove();
             }
             this.$el.find(this.spinner).hide();
+            console.log(this.collection.models)
         },
 
         renderItems: function () {

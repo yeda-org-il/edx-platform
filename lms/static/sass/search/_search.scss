@@ -1,43 +1,49 @@
-.search-bar {
+.search-bar,
+.course-index .search-bar,
+.dashboard .search-bar {
 
   @include box-sizing(border-box);
   position: relative;
-  padding: ($baseline/4);
+  padding: 5px;
+  font-family: $sans-serif;
 
-  .search-field-wrapper {
+  form > div {
     position: relative;
   }
 
   .search-field {
-    @extend %t-weight2;
     @include box-sizing(border-box);
+    @include border-radius(4px);
     top: 5px;
     width: 100%;
-    border-radius: 4px;
     background: $white-t1;
+    font-family: $sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
     &.is-active {
       background: $white;
     }
   }
 
-  .search-button, .cancel-button,
-  .search-button:hover, .cancel-button:hover {
-    @extend %t-icon6;
-    @extend %t-regular;
+  .search-button, .cancel-button {
     @include box-sizing(border-box);
-    @include right(12px);
     display: block;
     position: absolute;
     top: 0;
-    border: none;
-    background: transparent;
-    padding: 0;
+    @include right(12px);
     height: 35px;
-    color: $gray-l1;
-    box-shadow: none;
+    padding: 0;
+    color: #888;
+    font-size: 14px;
+    font-weight: normal;
     line-height: 35px;
+    border: none;
+    box-shadow: none;
     text-shadow: none;
     text-transform: none;
+    letter-spacing: normal;
+    background: transparent;
   }
 
   .cancel-button {
@@ -46,132 +52,114 @@
 
 }
 
+
 .search-results {
 
   display: none;
 
   .search-info {
-    border-bottom: 4px solid $border-color-l4;
-    padding-bottom: $baseline;
+    padding-bottom: lh(.75);
+    margin-bottom: lh(.50);
+    border-bottom: 1px solid $gray-l2;
     .search-count {
       @include float(right);
-      color: $gray-l1;
+      color: $gray;
     }
   }
 
   .search-result-list {
-    margin: 0;
     padding: 0;
   }
 
   .search-results-item {
-    @include padding-right(140px);
     position: relative;
     border-bottom: 1px solid $gray-l4;
-    padding: $baseline ($baseline/2);
     list-style-type: none;
-    cursor: pointer;
+    margin-bottom: lh(.75);
+    padding-bottom: lh(.75);
+    @include padding-right(140px);
 
-    &:hover {
-      background: $gray-l6;
-    }
-
-    .result-excerpt {
-      margin-bottom: $baseline;
-    }
-    .result-type {
-      @include right($baseline/2);
-      position: absolute;
-      bottom: $baseline;
-      font-size: 14px;
-      color: $gray-l1;
-    }
-    .result-course-name {
-      @include margin-right(1em);
-      font-size: 14px;
-      color: $gray-l1;
-    }
-    .result-location {
-      font-size: 14px;
-      color: $gray-l1;
-    }
-    .result-link {
-      @include right($baseline/2);
-      position: absolute;
-      top: $baseline;
-      line-height: 1.6em;
-      text-transform: uppercase;
-    }
-    .search-results-ellipsis {
-      @extend %t-copy-sub2;
+    .sri-excerpt {
       color: $gray;
-
-      &:after {
-        content: '\2026';
-      }
+      margin-bottom: lh(1);
+    }
+    .sri-type {
+      position: absolute;
+      @include right(0);
+      top: 0;
+      color: $gray;
+    }
+    .sri-course-name {
+      @include margin-right(1em);
+    }
+    .sri-link {
+      position: absolute;
+      @include right(0);
+      line-height: 1.6em;
+      bottom: lh(.75);
+      text-transform: uppercase;
     }
   }
 
   .search-load-next {
     display: block;
-    border: 2px solid $link-color;
-    padding: 1rem;
-    border-radius: 3px;
-    color: $base-font-color;
     text-transform: uppercase;
+    color: $base-font-color;
+    border: 2px solid $link-color;
+    @include border-radius(3px);
+    padding: 1rem;
   }
 
 }
 
 
-.courseware-search-bar {
-  box-shadow: 0 1px 0 $white inset, 0 -1px 0 $shadow-l1 inset;
+#courseware-search-bar  {
+  box-shadow: 0 1px 0 #fff inset, 0 -1px 0 rgba(0, 0, 0, .1) inset;
 }
 
 
-.dashboard-search-bar  {
+#dashboard-search-bar  {
   @include float(right);
   @include margin-left(flex-gutter());
-  margin-bottom: $baseline;
-  padding: 0;
   width: flex-grid(3);
+  background: $gray-l6;
+  border: 1px solid $gray-l4;
+  border-radius: ($baseline/4);
+  margin-bottom: $baseline;
   label {
-    @extend %t-regular;
-    font-family: $sans-serif;
     color: $gray;
+    font-family: $sans-serif;
     font-size: 13px;
     font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
     text-transform: uppercase;
   }
   .search-field {
     background: $white;
-    box-shadow: 0 1px 0 0 $white, inset 0 0 3px 0 $shadow-l2;
-    font-family: $sans-serif;
-    font-style: normal;
   }
 }
 
-.dashboard-search-results {
+#dashboard-search-results {
   @include float(left);
-  margin: 0;
-  padding: 0;
   width: flex-grid(9);
   min-height: 300px;
+  margin: 0;
+  padding: 0;
   .search-info {
     padding-bottom: lh(1.75);
     a {
       display: block;
-      margin-bottom: lh(.5);
       font-size: 13px;
+      margin-bottom: lh(.5);
     }
     h2 {
-      @extend %t-title5;
       @include float(left);
       @include clear(left);
     }
   }
 }
 
-.courseware-search-results {
-  padding: ($baseline*2);
+#courseware-search-results {
+  padding: 40px;
 }
