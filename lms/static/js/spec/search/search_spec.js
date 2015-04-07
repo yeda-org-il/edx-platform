@@ -98,7 +98,7 @@ define([
                     }
                 }]
             };
-            this.server.respondWith('POST', '/search/', [200, {}, JSON.stringify(response)]);
+            this.server.respondWith('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             this.server.respond();
 
             expect(this.onSearch).toHaveBeenCalled();
