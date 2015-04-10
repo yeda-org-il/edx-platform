@@ -102,8 +102,7 @@ data: |
         <optioninput options="('India','Spain','China','Bermuda')" correct="India"></optioninput>
       </optionresponse>
       </fieldset>
-          <h5>Example Multiple Choice Problem</h4>
-        </p>
+          <h5>Example Multiple Choice Problem</h5>
       <fieldset>
       <legend>Which of the following countries has the largest population?</legend>
       <multiplechoiceresponse>
