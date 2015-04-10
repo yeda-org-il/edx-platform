@@ -4,13 +4,10 @@ Test courseware search
 import os
 import json
 
-from ..helpers import create_user_partition_json
 from ...pages.common.logout import LogoutPage
-from ...pages.studio.utils import add_html_component, click_css, type_in_codemirror
 from ...pages.studio.overview import CourseOutlinePage
-from ...pages.studio.container import ContainerPage
 from ...pages.lms.courseware_search import CoursewareSearchPage
-from ...fixtures.course import CourseFixture, XBlockFixtureDesc
+from ...fixtures.course import XBlockFixtureDesc
 
 from nose.plugins.attrib import attr
 
@@ -21,11 +18,9 @@ from ...pages.studio.auto_auth import AutoAuthPage as StudioAutoAuthPage
 from ...fixtures import LMS_BASE_URL
 from ...pages.studio.component_editor import ComponentVisibilityEditorView
 from ...pages.lms.instructor_dashboard import InstructorDashboardPage
-from ...pages.lms.courseware import CoursewarePage
-from ...pages.lms.auto_auth import AutoAuthPage as LmsAutoAuthPage
-from ...tests.lms.test_lms_user_preview import verify_expected_problem_visibility
 
 from bok_choy.promise import EmptyPromise
+
 
 @attr('shard_1')
 class CoursewareSearchCohortTest(ContainerBase):
@@ -34,21 +29,6 @@ class CoursewareSearchCohortTest(ContainerBase):
     """
     USERNAME = 'STUDENT_TESTER'
     EMAIL = 'student101@example.com'
-
-    STAFF_USERNAME = "STAFF_TESTER"
-    STAFF_EMAIL = "staff101@example.com"
-
-    HTML_CONTENT = """
-            Someday I'll wish upon a star
-            And wake up where the clouds are far
-            Behind me.
-            Where troubles melt like lemon drops
-            Away above the chimney tops
-            That's where you'll find me.
-        """
-    SEARCH_STRING = "chimney"
-    EDITED_CHAPTER_NAME = "Section 2 - edited"
-    EDITED_SEARCH_STRING = "edited"
 
     TEST_INDEX_FILENAME = "test_root/index_file.dat"
 
@@ -87,24 +67,19 @@ class CoursewareSearchCohortTest(ContainerBase):
             self.browser, username=self.cohort_b_student_username, email=self.cohort_b_student_email, no_login=True
         ).visit()
 
-        # Create a student who will end up in the default cohort group
-        self.cohort_default_student_username = "cohort_default_student"
-        self.cohort_default_student_email = "cohort_default_student@example.com"
-        StudioAutoAuthPage(
-            self.browser, username=self.cohort_default_student_username,
-            email=self.cohort_default_student_email, no_login=True
-        ).visit()
-
-        # Start logged in as the staff user.
-        StudioAutoAuthPage(
-            self.browser, username=self.staff_user["username"], email=self.staff_user["email"]
-        ).visit()
-
         self.courseware_search_page = CoursewareSearchPage(self.browser, self.course_id)
 
-        self.course_outline = self.outline
+        # Enable Cohorting and assign cohorts and content groups
+        self._auto_auth(self.staff_user["username"], self.staff_user["email"], True)
+        self.enable_cohorting(self.course_fixture)
+        self.create_content_groups()
+        self.link_html_to_content_groups_and_publish()
+        self.create_cohorts_and_assign_students()
+
+        self._studio_reindex()
 
     def tearDown(self):
+        super(CoursewareSearchCohortTest, self).tearDown()
         os.remove(self.TEST_INDEX_FILENAME)
 
     def _auto_auth(self, username, email, staff):
@@ -113,64 +88,35 @@ class CoursewareSearchCohortTest(ContainerBase):
         """
         LogoutPage(self.browser).visit()
         StudioAutoAuthPage(self.browser, username=username, email=email,
-                     course_id=self.course_id, staff=staff).visit()
+                           course_id=self.course_id, staff=staff).visit()
 
-    def _studio_add_content(self, section_index):
+    def _studio_reindex(self):
         """
-        Add content on studio course page under specified section
+        Reindex course content on studio course page
         """
 
-        # create a unit in course outline
+        self._auto_auth(self.staff_user["username"], self.staff_user["email"], True)
         self.course_outline.visit()
-        subsection = self.course_outline.section_at(section_index).subsection_at(0)
-        subsection.expand_subsection()
-        subsection.add_unit()
-
-        # got to unit and create an HTML component and save (not publish)
-        unit_page = ContainerPage(self.browser, None)
-        unit_page.wait_for_page()
-        add_html_component(unit_page, 0)
-        unit_page.wait_for_element_presence('.edit-button', 'Edit button is visible')
-        click_css(unit_page, '.edit-button', 0, require_notification=False)
-        unit_page.wait_for_element_visibility('.modal-editor', 'Modal editor is visible')
-        type_in_codemirror(unit_page, 0, self.HTML_CONTENT)
-        click_css(unit_page, '.action-save', 0)
-
-    def _studio_publish_content(self, section_index):
-        """
-        Publish content on studio course page under specified section
-        """
-        self.course_outline.visit()
-        subsection = self.course_outline.section_at(section_index).subsection_at(0)
-        subsection.expand_subsection()
-        unit = subsection.unit_at(0)
-        unit.publish()
+        self.course_outline.start_reindex()
+        self.course_outline.wait_for_ajax()
 
     def populate_course_fixture(self, course_fixture):
         """
         Populate the children of the test course fixture.
         """
-        self.group_a_problem = 'GROUP A CONTENT'
-        self.group_b_problem = 'GROUP B CONTENT'
-        self.group_a_and_b_problem = 'GROUP A AND B CONTENT'
-        self.visible_to_all_problem = 'VISIBLE TO ALL CONTENT'
+        self.group_a_html = 'GROUPACONTENT'
+        self.group_b_html = 'GROUPBCONTENT'
+        self.group_a_and_b_html = 'GROUPAANDBCONTENT'
+        self.visible_to_all_html = 'VISIBLETOALLCONTENT'
 
         course_fixture.add_children(
-            XBlockFixtureDesc('chapter', 'Section 1').add_children(
-                XBlockFixtureDesc('sequential', 'Subsection 1')
-            )
-        ).add_children(
-            XBlockFixtureDesc('chapter', 'Section 2').add_children(
-                XBlockFixtureDesc('sequential', 'Subsection 2')
-            )
-        ).add_children(
             XBlockFixtureDesc('chapter', 'Test Section').add_children(
                 XBlockFixtureDesc('sequential', 'Test Subsection').add_children(
                     XBlockFixtureDesc('vertical', 'Test Unit').add_children(
-                        XBlockFixtureDesc('problem', self.group_a_problem, data='<problem></problem>'),
-                        XBlockFixtureDesc('problem', self.group_b_problem, data='<problem></problem>'),
-                        XBlockFixtureDesc('problem', self.group_a_and_b_problem, data='<problem></problem>'),
-                        XBlockFixtureDesc('problem', self.visible_to_all_problem, data='<problem></problem>')
+                        XBlockFixtureDesc('html', self.group_a_html, data='<html>GROUPACONTENT</html>'),
+                        XBlockFixtureDesc('html', self.group_b_html, data='<html>GROUPBCONTENT</html>'),
+                        XBlockFixtureDesc('html', self.group_a_and_b_html, data='<html>GROUPAANDBCONTENT</html>'),
+                        XBlockFixtureDesc('html', self.visible_to_all_html, data='<html>VISIBLETOALLCONTENT</html>')
                     )
                 )
             )
@@ -207,21 +153,24 @@ class CoursewareSearchCohortTest(ContainerBase):
         config.name = self.content_group_b
         config.save()
 
-    def link_problems_to_content_groups_and_publish(self):
+    def link_html_to_content_groups_and_publish(self):
         """
-        Updates 3 of the 4 existing problems to limit their visibility by content group.
+        Updates 3 of the 4 existing html to limit their visibility by content group.
         Publishes the modified units.
         """
         container_page = self.go_to_unit_page()
 
-        def set_visibility(problem_index, content_group, second_content_group=None):
-            problem = container_page.xblocks[problem_index]
-            problem.edit_visibility()
+        def set_visibility(html_block_index, content_group, second_content_group=None):
+            """
+            Set visibility on html blocks to specified groups.
+            """
+            html_block = container_page.xblocks[html_block_index]
+            html_block.edit_visibility()
             if second_content_group:
-                ComponentVisibilityEditorView(self.browser, problem.locator).select_option(
+                ComponentVisibilityEditorView(self.browser, html_block.locator).select_option(
                     second_content_group, save=False
                 )
-            ComponentVisibilityEditorView(self.browser, problem.locator).select_option(content_group)
+            ComponentVisibilityEditorView(self.browser, html_block.locator).select_option(content_group)
 
         set_visibility(1, self.content_group_a)
         set_visibility(2, self.content_group_b)
@@ -239,49 +188,18 @@ class CoursewareSearchCohortTest(ContainerBase):
         cohort_management_page = instructor_dashboard_page.select_cohort_management()
 
         def add_cohort_with_student(cohort_name, content_group, student):
+            """
+            Create cohort and assign student to it.
+            """
             cohort_management_page.add_cohort(cohort_name, content_group=content_group)
             # After adding the cohort, it should automatically be selected
             EmptyPromise(
                 lambda: cohort_name == cohort_management_page.get_selected_cohort(), "Waiting for new cohort"
             ).fulfill()
             cohort_management_page.add_students_to_selected_cohort([student])
-
         add_cohort_with_student("Cohort A", self.content_group_a, self.cohort_a_student_username)
         add_cohort_with_student("Cohort B", self.content_group_b, self.cohort_b_student_username)
-
-    def view_cohorted_content_as_different_users(self):
-        """
-        View content as staff, student in Cohort A, student in Cohort B, and student in Default Cohort.
-        """
-        courseware_page = CoursewarePage(self.browser, self.course_id)
-
-        def login_and_verify_visible_problems(username, email, expected_problems):
-            LmsAutoAuthPage(
-                self.browser, username=username, email=email, course_id=self.course_id
-            ).visit()
-            courseware_page.visit()
-            verify_expected_problem_visibility(self, courseware_page, expected_problems)
-
-        login_and_verify_visible_problems(
-            self.staff_user["username"], self.staff_user["email"],
-            [self.group_a_problem, self.group_b_problem, self.group_a_and_b_problem, self.visible_to_all_problem]
-        )
-
-        login_and_verify_visible_problems(
-            self.cohort_a_student_username, self.cohort_a_student_email,
-            [self.group_a_problem, self.group_a_and_b_problem, self.visible_to_all_problem]
-        )
-
-        login_and_verify_visible_problems(
-            self.cohort_b_student_username, self.cohort_b_student_email,
-            [self.group_b_problem, self.group_a_and_b_problem, self.visible_to_all_problem]
-        )
-
-        login_and_verify_visible_problems(
-            self.cohort_default_student_username, self.cohort_default_student_email,
-            [self.visible_to_all_problem]
-        )
-
+        cohort_management_page.wait_for_ajax()
 
     def test_page_existence(self):
         """
@@ -290,28 +208,38 @@ class CoursewareSearchCohortTest(ContainerBase):
         self._auto_auth(self.USERNAME, self.EMAIL, False)
         self.courseware_search_page.visit()
 
-    def test_cohorted_courseware_search(self):
+    def test_cohorted_search_user_a_a_content(self):
+        """
+        Test user can search content restricted to his cohort.
+        """
+        self._auto_auth(self.cohort_a_student_username, self.cohort_a_student_email, False)
+        self.courseware_search_page.visit()
+        self.courseware_search_page.search_for_term('GROUPACONTENT')
+        assert 'GROUPACONTENT' in self.courseware_search_page.search_results.html[0]
 
-        # Create content in studio without publishing.
-        self._auto_auth(self.STAFF_USERNAME, self.STAFF_EMAIL, True)
-        self._studio_add_content(0)
+    def test_cohorted_search_user_b_a_content(self):
+        """
+        Test user can not search content restricted to his cohort.
+        """
+        self._auto_auth(self.cohort_b_student_username, self.cohort_b_student_email, False)
+        self.courseware_search_page.visit()
+        self.courseware_search_page.search_for_term(self.group_a_html)
+        assert self.group_a_html not in self.courseware_search_page.search_results.html[0]
 
-        # Publish in studio to trigger indexing.
-        self._auto_auth(self.STAFF_USERNAME, self.STAFF_EMAIL, True)
-        self._studio_publish_content(0)
-        self.browser.save_screenshot('test_shot.jpg')
-
-        # Do the search again, this time we expect results.
+    def test_cohorted_search_user_c_ab_content(self):
+        """
+        Test user not enrolled in any cohorts can't see any of restricted content.
+        """
         self._auto_auth(self.USERNAME, self.EMAIL, False)
         self.courseware_search_page.visit()
-        self.browser.save_screenshot('test_shot2.jpg')
-        self.courseware_search_page.search_for_term(self.SEARCH_STRING)
-        self.browser.save_screenshot('test_shot3.jpg')
-        assert self.SEARCH_STRING in self.courseware_search_page.search_results.html[0]
+        self.courseware_search_page.search_for_term(self.group_a_and_b_html)
+        assert self.group_a_and_b_html not in self.courseware_search_page.search_results.html[0]
 
-        # Enable Cohorting
-        self.enable_cohorting(self.course_fixture)
-        self.create_content_groups()
-        self.link_problems_to_content_groups_and_publish()
-        self.create_cohorts_and_assign_students()
-        self.view_cohorted_content_as_different_users()
+    def test_cohorted_search_user_c_all_content(self):
+        """
+        Test user can search public content if cohorts used on course.
+        """
+        self._auto_auth(self.USERNAME, self.EMAIL, False)
+        self.courseware_search_page.visit()
+        self.courseware_search_page.search_for_term(self.visible_to_all_html)
+        assert self.visible_to_all_html in self.courseware_search_page.search_results.html[0]

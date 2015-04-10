@@ -5,7 +5,9 @@ This file contains implementation override of SearchFilterGenerator which will a
 from datetime import datetime
 
 from student.models import CourseEnrollment
+from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
+from opaque_keys.edx.locations import SlashSeparatedCourseKey
 
 from search.filter_generator import SearchFilterGenerator
 from search.utils import DateRange

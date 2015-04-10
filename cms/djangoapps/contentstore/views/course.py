@@ -139,11 +139,14 @@ def reindex_course_and_check_access(course_key, user):
         raise PermissionDenied()
 
     course = modulestore().get_course(course_key)
-    groups_usage_info =  GroupConfiguration.get_content_groups_usage_info(modulestore(), course).items()
-    for name, group in groups_usage_info:
-        for module in group:
-            view, args, kwargs = resolve(module['url'])
-            module['usage_key_string'] = kwargs['usage_key_string']
+    groups_usage_info = GroupConfiguration.get_content_groups_usage_info(modulestore(), course).items()
+    if groups_usage_info:
+        for name, group in groups_usage_info:  # pylint: disable=unused-variable
+            for module in group:
+                view, args, kwargs = resolve(module['url'])  # pylint: disable=unused-variable
+                module['usage_key_string'] = kwargs['usage_key_string']
+    else:
+        groups_usage_info = None
     return CoursewareSearchIndexer.do_course_reindex(modulestore(), course_key, groups_usage_info)
 
 
