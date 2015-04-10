@@ -5,18 +5,22 @@ from django.core.urlresolvers import reverse
 from courseware.courses import course_image_url, get_course_about_section
 %>
 <%page args="course" />
-<article id="${course.id | h}" class="course">
+<article class="course" id="${course.id | h}" role="region" aria-label="${get_course_about_section(course, 'title')}">
   <a href="${reverse('about_course', args=[course.id.to_deprecated_string()])}">
     <header class="course-image">
       <div class="cover-image">
-        <img src="${course_image_url(course)}" alt="${course.display_number_with_default | h} ${get_course_about_section(course, 'title')} Cover Image" />
+        <img src="${course_image_url(course)}" alt="" />
+        <div class="learn-more">${_("LEARN MORE")}</div>
       </div>
     </header>
-    <section class="course-info">
-      <div class="course-organization">${get_course_about_section(course, 'university')}</div>
-      <div class="course-code">${course.display_number_with_default}</div>
-      <div class="course-title">${get_course_about_section(course, 'title')}</div>
-      <div class="course-date">Starts: ${course.start_datetime_text()}</div>
+    <section class="course-info" aria-hidden=true>
+      <h2 class="course-name">
+        <span class="course-organization">${get_course_about_section(course, 'university')}</span>
+        <span class="course-code">${course.display_number_with_default}</span>
+        <span class="course-title">${get_course_about_section(course, 'title')}</span>
+      </h2>
+      <div class="course-date" aria-hidden="true">${_("Starts")}: ${course.start_datetime_text()}</div>
     </section>
+    <div class="sr" aria-label="${get_course_about_section(course, 'university')}${course.display_number_with_default}${get_course_about_section(course, 'title')}${course.start_datetime_text()}"></div>
   </a>
 </article>
