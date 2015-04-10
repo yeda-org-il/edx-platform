@@ -40,15 +40,16 @@ data: |
   </formularesponse>
 
   <script type="loncapa/python">
-    VoVi = "(R_1*R_2)/R_3"
+  VoVi = "(R_1*R_2)/R_3"
   </script>
 
   <p>Let \( x\) be a variable, and let \( n\) be an arbitrary constant.
   What is the derivative of \( x^n\)?</p>
   
   <script type="loncapa/python">
-    derivative = "n*x^(n-1)"
+  derivative = "n*x^(n-1)"
   </script>
+
   <formularesponse type="ci" samples="x,n@1,2:3,4#10" answer="$derivative">
     <responseparam type="tolerance" default="0.00001"/>
     <formulaequationinput size="40"  label="Enter the equation"/>
