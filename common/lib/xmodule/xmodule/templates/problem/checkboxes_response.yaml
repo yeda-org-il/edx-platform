@@ -18,18 +18,18 @@ metadata:
        You can use the following example problem as a model.
        _____________________________________________________________________________
 
-      >>The following languages are in the Indo-European family:<<
-      [x] Urdu
-      [ ] Finnish
-      [x] Marathi
-      [x] French
-      [ ] Hungarian
+       >>The following languages are in the Indo-European family:<<
+       [x] Urdu
+       [ ] Finnish
+       [x] Marathi
+       [x] French
+       [ ] Hungarian
 
-      Note: Make sure you select all of the correct options—there may be more than one!
+       Note: Make sure you select all of the correct options—there may be more than one!
 
-      [explanation]
-      Urdu, Marathi, and French are all Indo-European languages, while Finnish and Hungarian are in the Uralic family.
-      [explanation]
+       [explanation]
+       Urdu, Marathi, and French are all Indo-European languages, while Finnish and Hungarian are in the Uralic family.
+       [explanation]
 
 data: |
       <problem>
