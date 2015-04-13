@@ -11,6 +11,7 @@ from opaque_keys.edx.keys import CourseKey
 from xmodule.modulestore.django import modulestore
 from courseware.courses import get_course_with_access
 from openedx.core.lib.api.permissions import IsUserInUrl
+from util.milestones_helpers import get_required_content
 
 
 def mobile_course_access(depth=0, verify_enrolled=True):
@@ -34,6 +35,7 @@ def mobile_course_access(depth=0, verify_enrolled=True):
                     course_id,
                     depth=depth
                 )
+                print get_required_content(course_id, request.user)
                 return func(self, request, course=course, *args, **kwargs)
         return _wrapper
     return _decorator
