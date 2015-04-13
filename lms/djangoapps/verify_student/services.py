@@ -5,7 +5,6 @@ from opaque_keys.edx.keys import CourseKey
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from verify_student.models import VerificationCheckpoint, VerificationStatus
-from cms.djangoapps.contentstore.utils import is_currently_visible_to_students
 
 
 class ReverificationService(object):
@@ -56,6 +55,3 @@ class ReverificationService(object):
             )
         )
         return re_verification_link
-
-    def is_published(self, xblock):
-        return is_currently_visible_to_students(xblock)
