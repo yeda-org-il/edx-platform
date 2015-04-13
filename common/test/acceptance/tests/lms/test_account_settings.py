@@ -33,6 +33,16 @@ class AccountSettingsTestMixin(EventsTestMixin, WebAppTest):
             self.browser, username=self.USERNAME, password=self.PASSWORD, email=self.EMAIL
         ).visit().get_user_id()
 
+    def assert_event_emitted_num_times(self, setting, num_times):
+        """
+        Verify a particular user settings change event was emitted a certain
+        number of times.
+        """
+        # pylint disable=no-member
+        super(AccountSettingsTestMixin, self).assert_event_emitted_num_times(
+            'edx.user.settings.changed', self.start_time, self.user_id, num_times, setting=setting
+        )
+
 
 class DashboardMenuTest(AccountSettingsTestMixin, WebAppTest):
     """
@@ -205,7 +215,7 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             [u'another name', self.USERNAME],
         )
 
-        self.assert_event_emitted_num_times('edx.user.settings.changed', self.start_time, self.user_id, 2)
+        self.assert_event_emitted_num_times('name', 2)
 
     def test_email_field(self):
         """
@@ -221,6 +231,10 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             assert_after_reload=False
         )
 
+        # Email is not saved until user confirms, so no events should have been
+        # emitted.
+        self.assert_event_emitted_num_times('email', 0)
+
     def test_password_field(self):
         """
         Test behaviour of "Password" field.
@@ -231,6 +245,10 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             u'Reset Password',
             success_message='Click the link in the message to reset your password.',
         )
+
+        # Like email, since the user has not confirmed their password change,
+        # the field has not yet changed, so no events will have been emitted.
+        self.assert_event_emitted_num_times('password', 0)
 
     @skip(
         'On bokchoy test servers, language changes take a few reloads to fully realize '
@@ -258,7 +276,7 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             u'',
             [u'Bachelor\'s degree', u''],
         )
-        self.assert_event_emitted_num_times('edx.user.settings.changed', self.start_time, self.user_id, 2)
+        self.assert_event_emitted_num_times('level_of_education', 2)
 
     def test_gender_field(self):
         """
@@ -270,7 +288,7 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             u'',
             [u'Female', u''],
         )
-        self.assert_event_emitted_num_times('edx.user.settings.changed', self.start_time, self.user_id, 2)
+        self.assert_event_emitted_num_times('gender', 2)
 
     def test_year_of_birth_field(self):
         """
@@ -284,7 +302,7 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             u'',
             [u'1980', u''],
         )
-        self.assert_event_emitted_num_times('edx.user.settings.changed', self.start_time, self.user_id, 3)
+        self.assert_event_emitted_num_times('year_of_birth', 3)
 
     def test_country_field(self):
         """
@@ -296,6 +314,7 @@ class AccountSettingsPageTest(AccountSettingsTestMixin, WebAppTest):
             u'Afghanistan',
             [u'Pakistan', u'Palau'],
         )
+        self.assert_event_emitted_num_times('country', 2)
 
     def test_preferred_language_field(self):
         """
