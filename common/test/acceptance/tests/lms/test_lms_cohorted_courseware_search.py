@@ -214,8 +214,8 @@ class CoursewareSearchCohortTest(ContainerBase):
         """
         self._auto_auth(self.cohort_a_student_username, self.cohort_a_student_email, False)
         self.courseware_search_page.visit()
-        self.courseware_search_page.search_for_term('GROUPACONTENT')
-        assert 'GROUPACONTENT' in self.courseware_search_page.search_results.html[0]
+        self.courseware_search_page.search_for_term(self.group_a_html)
+        assert self.group_a_html in self.courseware_search_page.search_results.html[0]
 
     def test_cohorted_search_user_b_a_content(self):
         """

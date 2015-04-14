@@ -6,9 +6,11 @@ import logging
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
+from django.core.urlresolvers import resolve
 from eventtracking import tracker
 from xmodule.modulestore import ModuleStoreEnum
 from search.search_engine_base import SearchEngine
+from contentstore.course_group_config import GroupConfiguration
 
 
 # Use default index and document names for now
@@ -83,7 +85,7 @@ class CoursewareSearchIndexer(object):
         # list - those are ready to be destroyed
         indexed_items = set()
 
-        def index_item(item, skip_index=False):
+        def index_item(item, skip_index=False, groups_usage_info=None, content_groups=None):
             """
             Add this item to the search index and indexed_items list
 
@@ -101,6 +103,16 @@ class CoursewareSearchIndexer(object):
             if not item_index_dictionary and not item.has_children:
                 return
 
+            if groups_usage_info:
+                item.content_groups = []
+                for name, group in groups_usage_info:
+                    for module in group:
+                        if str(item.location) == str(module['usage_key_string']):
+                            item.content_groups.append(name)
+
+            if content_groups and not getattr(item, 'content_groups', None):
+                item.content_groups = content_groups
+
             item_id = unicode(item.scope_ids.usage_id)
             indexed_items.add(item_id)
             if item.has_children:
@@ -108,7 +120,12 @@ class CoursewareSearchIndexer(object):
                 skip_child_index = skip_index or \
                     (triggered_at is not None and (triggered_at - item.subtree_edited_on) > reindex_age)
                 for child_item in item.get_children():
-                    index_item(child_item, skip_index=skip_child_index)
+                    if getattr(item, 'content_groups', None):
+                        index_item(child_item, skip_index=skip_child_index,
+                                   groups_usage_info=groups_usage_info, content_groups=item.content_groups)
+                    else:
+                        index_item(child_item, skip_index=skip_child_index,
+                                   groups_usage_info=groups_usage_info)
 
             if skip_index or not item_index_dictionary:
                 return
@@ -121,7 +138,8 @@ class CoursewareSearchIndexer(object):
                 item_index['id'] = item_id
                 if item.start:
                     item_index['start_date'] = item.start
-
+                if getattr(item, 'content_groups', None):
+                    item_index['content_groups'] = item.content_groups
                 searcher.index(DOCUMENT_TYPE, item_index)
                 indexed_count["count"] += 1
             except Exception as err:  # pylint: disable=broad-except
@@ -146,8 +164,14 @@ class CoursewareSearchIndexer(object):
         try:
             with modulestore.branch_setting(ModuleStoreEnum.RevisionOption.published_only):
                 course = modulestore.get_course(course_key, depth=None)
+                groups_usage_info = GroupConfiguration.get_content_groups_usage_info(modulestore, course).items()
+                if groups_usage_info:
+                    for name, group in groups_usage_info:  # pylint: disable=unused-variable
+                        for module in group:
+                            view, args, kwargs = resolve(module['url'])  # pylint: disable=unused-variable
+                            module['usage_key_string'] = kwargs['usage_key_string']
                 for item in course.get_children():
-                    index_item(item)
+                    index_item(item, False, groups_usage_info)
                 remove_deleted_items()
         except Exception as err:  # pylint: disable=broad-except
             # broad exception so that index operation does not prevent the rest of the application from working
