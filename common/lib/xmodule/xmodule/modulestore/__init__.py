@@ -372,19 +372,27 @@ class EditInfo(object):
         else:
             return value_if_unset
 
-    def __str__(self):
+    def __repr__(self):
         # pylint: disable=bad-continuation
-        return ("EditInfo(previous_version={0.previous_version}, "
-                "update_version={0.update_version}, "
-                "source_version={1}, "
-                "edited_on={0.edited_on}, "
-                "edited_by={0.edited_by}, "
-                "original_usage={0.original_usage}, "
-                "original_usage_version={0.original_usage_version}, "
-                "_subtree_edited_on={0._subtree_edited_on}, "
-                "_subtree_edited_by={0._subtree_edited_by})").format(
-            self,
-            "UNSET" if self.source_version is UNSET else self.source_version
+        return ("{classname}(previous_version={previous_version}, "
+                "update_version={update_version}, "
+                "source_version={source_version}, "
+                "edited_on={edited_on}, "
+                "edited_by={edited_by}, "
+                "original_usage={original_usage}, "
+                "original_usage_version={original_usage_version}, "
+                "_subtree_edited_on={subtree_edited_on}, "
+                "_subtree_edited_by={subtree_edited_by})").format(
+            classname=self.__class__.__name__,
+            previous_version=self.previous_version,
+            update_version=self.update_version,
+            source_version="UNSET" if self.source_version is UNSET else self.source_version,
+            edited_on=self.edited_on,
+            edited_by=self.edited_by,
+            original_usage=self.original_usage,
+            original_usage_version=self.original_usage_version,
+            subtree_edited_on=self._subtree_edited_on,
+            subtree_edited_by=self._subtree_edited_by,
         )  # pylint: disable=bad-continuation
 
 
@@ -432,13 +440,21 @@ class BlockData(object):
         # EditInfo object containing all versioning/editing data.
         self.edit_info = EditInfo(**block_data.get('edit_info', {}))
 
-    def __str__(self):
-        return ("BlockData(fields={0.fields}, "
-                "block_type={0.block_type}, "
-                "definition={0.definition}, "
-                "definition_loaded={0.definition_loaded}, "
-                "defaults={0.defaults}, "
-                "edit_info={0.edit_info})").format(self)
+    def __repr__(self):
+        return ("{classname}(fields={fields}, "
+                "block_type={block_type}, "
+                "definition={definition}, "
+                "definition_loaded={definition_loaded}, "
+                "defaults={defaults}, "
+                "edit_info={edit_info})").format(
+            classname=self.__class__.__name__,
+            fields=self.fields,
+            block_type=self.block_type,
+            definition=self.definition,
+            definition_loaded=self.definition_loaded,
+            defaults=self.defaults,
+            edit_info=self.edit_info,
+        )
 
 
 new_contract('BlockData', BlockData)
