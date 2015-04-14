@@ -141,6 +141,7 @@ class CoursewareSearchIndexer(object):
         AboutInfo("ocw_links", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
         AboutInfo("enrollment_start", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
         AboutInfo("enrollment_end", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("org", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
     ]
 
     @classmethod
@@ -324,7 +325,7 @@ class CoursewareSearchIndexer(object):
             error_list.append(_('General indexing error occurred'))
 
         if error_list:
-            raise SearchIndexingError(_('Error(s) present during indexing'), error_list)
+            raise SearchIndexingError('Error(s) present during indexing', error_list)
 
         return indexed_count["count"]
 
