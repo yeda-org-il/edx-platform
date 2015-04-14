@@ -71,6 +71,33 @@
                             <div class="register-choice register-choice-certificate">
                                 <div class="wrapper-copy">
                                     <span class="deco-ribbon"></span>
+                                    % if has_credit_upsell:
+                                    <h4 class="title">${_("Pursue Academic Credit with a Verified Certificate")}</h4>
+
+                                    <div class="copy">
+                                        <p>${_("Become eligible for academic credit and highlight your new skills and knowledge with a verified certificate. Use this valuable credential to qualify for academic credit from {org}, advance your career, or highlight in school applications.").format(org=course_org)}</p>
+                                        <p>
+                                            <div class="wrapper-copy-inline">
+                                                <div class="copy-inline">
+                                                    <h4>${_("Benefits of a Verified Certificate")}</h4>
+                                                    <ul>
+                                                        <li><b>${_("Credit Eligibility")}: </b>${_("Receive academic credit after successfully completing the course")}</li>
+                                                        <li><b>${_("Official")}: </b>${_("Receive an instructor-signed certificate with the institution's logo")}</li>
+                                                        <li><b>${_("Easily shareable")}: </b>${_("Add the certificate to your CV, resume, or post it directly on LinkedIn")}</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="copy-inline list-actions">
+                                                    <ul class="list-actions">
+                                                        <li class="action action-select">
+                                                            <input type="hidden" name="contribution" value="${min_price}" />
+                                                            <input type="submit" name="verified_mode" value="${_('Pursue a Verified Certificate')} ($${min_price})" />
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </p>
+                                    </div>
+                                    % else:
                                     <h4 class="title">${_("Pursue a Verified Certificate")}</h4>
 
                                     <div class="copy">
@@ -78,9 +105,7 @@
                                         <p>
                                             <div class="wrapper-copy-inline">
                                                 <div class="copy-inline">
-                                                    <h4>
-                                                        ${_("Benefits of a verified Certificate")}
-                                                    </h4>
+                                                    <h4>${_("Benefits of a Verified Certificate")}</h4>
                                                     <ul>
                                                         <li><b>${_("Official")}: </b>${_("Receive an instructor-signed certificate with the institution's logo")}</li>
                                                         <li><b>${_("Easily sharable")}: </b>${_("Add the certificate to your CV or resume, or post it directly on LinkedIn")}</li>
@@ -98,6 +123,7 @@
                                             </div>
                                         </p>
                                     </div>
+                                    % endif
                                 </div>
                             </div>
                         % endif
