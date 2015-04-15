@@ -14,7 +14,6 @@ class Migration(SchemaMigration):
             ('change_date', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('changed_by', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True, on_delete=models.PROTECT)),
             ('enabled', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('number_of_retry_attempts', self.gf('django.db.models.fields.PositiveIntegerField')(default=0, blank=True)),
         ))
         db.send_create_signal('contentstore', ['PushNotificationConfig'])
 
@@ -59,8 +58,7 @@ class Migration(SchemaMigration):
             'change_date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'changed_by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True', 'on_delete': 'models.PROTECT'}),
             'enabled': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'number_of_retry_attempts': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0', 'blank': 'True'})
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'contentstore.videouploadconfig': {
             'Meta': {'object_name': 'VideoUploadConfig'},
