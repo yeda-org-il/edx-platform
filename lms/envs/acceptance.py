@@ -134,6 +134,8 @@ USE_I18N = True
 
 FEATURES['ENABLE_FEEDBACK_SUBMISSION'] = False
 
+FEATURES['ENABLE_DJANGO_SUDO'] = False
+
 # Include the lettuce app for acceptance testing, including the 'harvest' django-admin command
 INSTALLED_APPS += ('lettuce.django',)
 LETTUCE_APPS = ('courseware', 'instructor',)

@@ -92,6 +92,8 @@ FEATURES['AUTOMATIC_AUTH_FOR_TESTING'] = True
 # DO NOT CHANGE THIS SETTING HERE.
 FEATURES['ENABLE_DISCUSSION_SERVICE'] = False
 
+FEATURES['ENABLE_DJANGO_SUDO'] = False
+
 # HACK
 # Setting this flag to false causes imports to not load correctly in the lettuce python files
 # We do not yet understand why this occurs. Setting this to true is a stopgap measure

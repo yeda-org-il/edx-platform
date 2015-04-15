@@ -348,6 +348,8 @@ FEATURES = {
 
     # log all information from cybersource callbacks
     'LOG_POSTPAY_CALLBACKS': True,
+
+    'ENABLE_DJANGO_SUDO': True,
 }
 
 # Ignore static asset files on import which match this pattern

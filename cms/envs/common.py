@@ -145,6 +145,8 @@ FEATURES = {
 
     # Enable course reruns, which will always use the split modulestore
     'ALLOW_COURSE_RERUNS': True,
+
+    'ENABLE_DJANGO_SUDO': True,
 }
 
 ENABLE_JASMINE = False
