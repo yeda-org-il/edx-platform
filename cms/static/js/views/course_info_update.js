@@ -238,10 +238,12 @@ define(["js/views/baseview", "codemirror", "js/models/course_update",
         push_notification_selected: function(event) {
             var push_notification_checkbox;
             var li = $(event.currentTarget).closest("li");
-            if (li)
+            if (li) {
                 push_notification_checkbox = li.find(".new-update-push-notification .toggle-checkbox");
-                if (push_notification_checkbox)
+                if (push_notification_checkbox) {
                     return push_notification_checkbox.is(":checked");
+                }
+            }
         }
 
     });
