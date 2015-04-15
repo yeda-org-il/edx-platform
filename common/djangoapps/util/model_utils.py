@@ -34,9 +34,9 @@ def get_changed_fields_dict(instance, model_class):
         # an empty dict as a default value.
         return {}
     else:
-        field_names = [
+        field_names = set([
             field[0].name for field in model_class._meta.get_fields_with_model()
-        ]
+        ])
         changed_fields = {
             field_name: getattr(old_model, field_name) for field_name in field_names
             if getattr(old_model, field_name) != getattr(instance, field_name)
@@ -85,6 +85,8 @@ def emit_field_changed_events(instance, user, event_name, db_table, excluded_fie
     excluded_fields = excluded_fields or []
     hidden_fields = hidden_fields or []
     changed_fields = getattr(instance, '_changed_fields', {})
+    if getattr(instance, '_changed_fields', None):
+        del instance._changed_fields
     for field_name in changed_fields:
         if field_name not in excluded_fields:
             tracker.emit(
@@ -97,6 +99,3 @@ def emit_field_changed_events(instance, user, event_name, db_table, excluded_fie
                     "table": db_table
                 }
             )
-    # Remove the now inaccurate _changed_fields attribute.
-    if getattr(instance, '_changed_fields', None):
-        del instance._changed_fields
