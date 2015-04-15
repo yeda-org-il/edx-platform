@@ -19,6 +19,7 @@ class NoseTestSuite(TestSuite):
         super(NoseTestSuite, self).__init__(*args, **kwargs)
         self.failed_only = kwargs.get('failed_only', False)
         self.fail_fast = kwargs.get('fail_fast', False)
+        self.pdb = kwargs.get('pdb', False)
         self.run_under_coverage = kwargs.get('with_coverage', True)
         self.report_dir = Env.REPORT_DIR / self.root
         self.test_id_dir = Env.TEST_DIR / self.root
@@ -89,6 +90,9 @@ class NoseTestSuite(TestSuite):
 
         if self.fail_fast or env_fail_fast_set:
             opts += " --stop"
+
+        if self.pdb:
+            opts += " --pdb"
 
         return opts
 
