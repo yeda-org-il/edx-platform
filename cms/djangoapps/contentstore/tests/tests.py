@@ -355,14 +355,11 @@ class CourseKeyVerificationTestCase(CourseTestCase):
 
 class PushNotificationConfigTestCase(TestCase):
     """
-    Tests MobileAPIConfig
+    Tests PushNotificationConfig.
     """
-
     def test_notifications_defaults(self):
-        """Check that video_profiles config is returned in order as a list"""
         self.assertFalse(PushNotificationConfig.is_enabled())
 
     def test_notifications_enabled(self):
-        """Check that video_profiles config is returned in order as a list"""
         PushNotificationConfig(enabled=True).save()
         self.assertTrue(PushNotificationConfig.is_enabled())
