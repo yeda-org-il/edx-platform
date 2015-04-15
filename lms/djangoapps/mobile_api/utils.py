@@ -5,13 +5,12 @@ Common utility methods and decorators for Mobile APIs.
 
 import functools
 from django.http import Http404
-from rest_framework import permissions
+from rest_framework import permissions, status, response
 
 from util.authentication import SessionAuthenticationAllowInactiveUser, OAuth2AuthenticationAllowInactiveUser
 from opaque_keys.edx.keys import CourseKey
 from xmodule.modulestore.django import modulestore
 from courseware.courses import get_course_with_access
-from courseware.access import has_access
 from openedx.core.lib.api.permissions import IsUserInUrl
 from util.milestones_helpers import get_required_content, get_course_milestones_fulfillment_paths
 
@@ -37,11 +36,15 @@ def mobile_course_access(depth=0, verify_enrolled=True):
                     course_id,
                     depth=depth
                 )
-                # if not has_access(request.user, 'view_courseware_with_prerequisites', course):
-                #     raise Http404("Pre-requisites not met")
                 milestones = get_course_milestones_fulfillment_paths(course_id, {"id": request.user.id})
                 if milestones:
-                    raise Http404("blah") #TODO Figure out how to forward error message
+                    message = {
+                        "developer_message": "Cannot access content with unfulfilled pre-requisites or unpassed entrance exam. ",
+                        "user_message": "Cannot access content with unfulfilled milestones",
+                        }
+                    return response.Response(
+                        data=message,
+                        status=status.HTTP_404_NOT_FOUND)
                 return func(self, request, course=course, *args, **kwargs)
         return _wrapper
     return _decorator
