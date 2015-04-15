@@ -3,17 +3,22 @@ from __future__ import absolute_import
 
 from datetime import timedelta
 import logging
+import re
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from eventtracking import tracker
-from xmodule.modulestore import ModuleStoreEnum
-from search.search_engine_base import SearchEngine
 
+from contentstore.utils import course_image_url
+from eventtracking import tracker
+from search.search_engine_base import SearchEngine
+from xmodule.modulestore import ModuleStoreEnum
+from xmodule.modulestore.exceptions import ItemNotFoundError
+from xmodule.annotator_mixin import html_to_text
 
 # Use default index and document names for now
 INDEX_NAME = "courseware_index"
-DOCUMENT_TYPE = "courseware_content"
+COURSEWARE_DOCUMENT_TYPE = "courseware_content"
+DISCOVERY_DOCUMENT_TYPE = "course_info"
 
 # REINDEX_AGE is the default amount of time that we look back for changes
 # that might have happened. If we are provided with a time at which the
@@ -23,6 +28,71 @@ DOCUMENT_TYPE = "courseware_content"
 REINDEX_AGE = timedelta(0, 60)  # 60 seconds
 
 log = logging.getLogger('edx.modulestore')
+
+
+class AboutInfo(object):
+    """ About info structure to contain
+       1) Property name to use
+       2) Where to add in the index (using flags above)
+       3) Where to source the properties value
+    """
+    # Bitwise Flags for where to index the information
+    #
+    # ANALYSE - states that the property text contains content that we wish to be able to find matched within
+    #   e.g. "joe" should yield a result for "I'd like to drink a cup of joe"
+    #
+    # PROPERTY - states that the property text should be a property of the indexed document, to be returned with the
+    # results: search matches will only be made on exact string matches
+    #   e.g. "joe" will only match on "joe"
+    #
+    # We are using bitwise flags because one may want to add the property to EITHER or BOTH parts of the index
+    #   e.g. university name is desired to be analysed, so that a search on "Oxford" will match
+    #   property values "University of Oxford" and "Oxford Brookes University",
+    #   but it is also a useful property, because within a (future) filtered search a user
+    #   may have chosen to filter courses from "University of Oxford"
+    #
+    # see https://wiki.python.org/moin/BitwiseOperators for information about bitwise shift operator used below
+    #
+    ANALYSE = 1 << 0  # Add the information to the analysed content of the index
+    PROPERTY = 1 << 1  # Add the information as a property of the object being indexed (not analysed)
+
+    # Source location options - this is the function that returns the value of the property, signature should be
+    #   course, attribute_name, modulestore
+    @staticmethod
+    def fetch_from_about(course, attribute_name, modulestore):
+        """ Get about attribute from modulestore """
+        usage_key = course.id.make_usage_key('about', attribute_name)
+        try:
+            value = modulestore.get_item(usage_key).data
+        except ItemNotFoundError:
+            value = None
+        return value
+
+    @staticmethod
+    def fetch_course_property(course, attribute_name, modulestore):  # pylint: disable=unused-argument
+        """ Fetches attribute's value from the course's property list """
+        return getattr(course, attribute_name, None)
+
+    def __init__(self, property_name, index_flags, source_function):
+        self.property_name = property_name
+        self.index_flags = index_flags
+        self.source_function = source_function
+
+    def get_value(self, course, modulestore):
+        """ Get the associated value from the object """
+        return self.source_function(course, self.property_name, modulestore)
+
+
+def strip_html_content_to_text(html_content):
+    """ Gets only the textual part for html content - useful for building text to be searched """
+    # Removing HTML-encoded non-breaking space characters
+    text_content = re.sub(r"(\s|&nbsp;|//)+", " ", html_to_text(html_content))
+    # Removing HTML CDATA
+    text_content = re.sub(r"<!\[CDATA\[.*\]\]>", "", text_content)
+    # Removing HTML comments
+    text_content = re.sub(r"<!--.*-->", "", text_content)
+
+    return text_content
 
 
 def indexing_is_enabled():
@@ -45,12 +115,103 @@ class CoursewareSearchIndexer(object):
     Class to perform indexing for courseware search from different modulestores
     """
 
+    # List of properties to add to the index - each item in the list is an instance of AboutInfo object
+    ABOUT_INFORMATION_TO_INCLUDE = [
+        AboutInfo("advertised_start", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("announcement", AboutInfo.PROPERTY, AboutInfo.fetch_from_about),
+        AboutInfo("start", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("end", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("effort", AboutInfo.PROPERTY, AboutInfo.fetch_from_about),
+        AboutInfo("display_name", AboutInfo.ANALYSE, AboutInfo.fetch_course_property),
+        AboutInfo("overview", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("title", AboutInfo.ANALYSE | AboutInfo.PROPERTY, AboutInfo.fetch_from_about),
+        AboutInfo("university", AboutInfo.ANALYSE | AboutInfo.PROPERTY, AboutInfo.fetch_from_about),
+        AboutInfo("number", AboutInfo.ANALYSE | AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("short_description", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("description", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("key_dates", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("video", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("course_staff_short", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("course_staff_extended", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("requirements", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("syllabus", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("textbook", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("faq", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("more_info", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("ocw_links", AboutInfo.ANALYSE, AboutInfo.fetch_from_about),
+        AboutInfo("enrollment_start", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("enrollment_end", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+        AboutInfo("org", AboutInfo.PROPERTY, AboutInfo.fetch_course_property),
+    ]
+
+    @classmethod
+    def index_about_information(cls, modulestore, course):
+        """
+        Add the given course to the course discovery index
+
+        Arguments:
+        modulestore - modulestore object to use for operations
+
+        course - course object from which to take properties, locate about information
+        """
+        searcher = SearchEngine.get_search_engine(INDEX_NAME)
+        if not searcher:
+            return
+
+        course_id = unicode(course.id)
+        course_info = {
+            'id': course_id,
+            'course': course_id,
+            'content': {},
+            'image_url': course_image_url(course),
+        }
+
+        for about_information in cls.ABOUT_INFORMATION_TO_INCLUDE:
+            # Broad exception handler so that a single bad property does not scupper the collection of others
+            try:
+                section_content = about_information.get_value(course, modulestore)
+            except Exception as err:  # pylint: disable=broad-except
+                section_content = None
+                log.warning(
+                    "Course discovery could not collect property %s for course %s - %r",
+                    about_information.property_name,
+                    course_id,
+                    err,
+                )
+
+            if section_content:
+                if about_information.index_flags & AboutInfo.ANALYSE:
+                    analyse_content = section_content
+                    if isinstance(section_content, basestring):
+                        analyse_content = strip_html_content_to_text(section_content)
+                    course_info['content'][about_information.property_name] = analyse_content
+                if about_information.index_flags & AboutInfo.PROPERTY:
+                    course_info[about_information.property_name] = section_content
+
+        # Broad exception handler to protect around and report problems with indexing
+        try:
+            searcher.index(DISCOVERY_DOCUMENT_TYPE, course_info)
+        except Exception as err:  # pylint: disable=broad-except
+            log.exception(
+                "Course discovery indexing error encountered, course discovery index may be out of date %s - %r",
+                course_id,
+                err
+            )
+            raise
+
+        log.debug(
+            "Successfully added %s course to the course discovery index",
+            course_id
+        )
+
     @classmethod
     def index_course(cls, modulestore, course_key, triggered_at=None, reindex_age=REINDEX_AGE):
         """
         Process course for indexing
 
         Arguments:
+        modulestore - modulestore object to use for operations
+
         course_key (CourseKey) - course identifier
 
         triggered_at (datetime) - provides time at which indexing was triggered;
@@ -122,7 +283,7 @@ class CoursewareSearchIndexer(object):
                 if item.start:
                     item_index['start_date'] = item.start
 
-                searcher.index(DOCUMENT_TYPE, item_index)
+                searcher.index(COURSEWARE_DOCUMENT_TYPE, item_index)
                 indexed_count["count"] += 1
             except Exception as err:  # pylint: disable=broad-except
                 # broad exception so that index operation does not fail on one item of many
@@ -135,17 +296,22 @@ class CoursewareSearchIndexer(object):
             as we find items we can shorten the set of items to keep
             """
             response = searcher.search(
-                doc_type=DOCUMENT_TYPE,
+                doc_type=COURSEWARE_DOCUMENT_TYPE,
                 field_dictionary={"course": unicode(course_key)},
                 exclude_ids=indexed_items
             )
             result_ids = [result["data"]["id"] for result in response["results"]]
             for result_id in result_ids:
-                searcher.remove(DOCUMENT_TYPE, result_id)
+                searcher.remove(COURSEWARE_DOCUMENT_TYPE, result_id)
 
         try:
             with modulestore.branch_setting(ModuleStoreEnum.RevisionOption.published_only):
                 course = modulestore.get_course(course_key, depth=None)
+
+                # First add the top-level about information for the course
+                cls.index_about_information(modulestore, course)
+
+                # Next index the content
                 for item in course.get_children():
                     index_item(item)
                 remove_deleted_items()
