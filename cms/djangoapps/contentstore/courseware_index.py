@@ -309,7 +309,7 @@ class CoursewareSearchIndexer(object):
                 course = modulestore.get_course(course_key, depth=None)
 
                 # First add the top-level about information for the course
-                cls.index_about_information(modulestore, course)
+                #cls.index_about_information(modulestore, course)
 
                 # Next index the content
                 for item in course.get_children():
