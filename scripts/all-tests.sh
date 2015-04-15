@@ -102,7 +102,7 @@ END
                 ;;
             "cms-js-commonlib")
                 paver test_system -s cms --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
-                paver test_js --coverage --skip_clean --cov_args="-p" || { EXIT=1; }
+                paver test_js --coverage --skip_clean || { EXIT=1; }
                 paver test_lib --skip_clean --extra_args="--with-flaky" --cov_args="-p" || { EXIT=1; }
                 ;;
             *)
