@@ -4,12 +4,14 @@ Common utility methods and decorators for Mobile APIs.
 
 
 import functools
+from django.http import Http404
 from rest_framework import permissions
 
 from util.authentication import SessionAuthenticationAllowInactiveUser, OAuth2AuthenticationAllowInactiveUser
 from opaque_keys.edx.keys import CourseKey
 from xmodule.modulestore.django import modulestore
 from courseware.courses import get_course_with_access
+from courseware.access import has_access
 from openedx.core.lib.api.permissions import IsUserInUrl
 from util.milestones_helpers import get_required_content
 
@@ -35,7 +37,12 @@ def mobile_course_access(depth=0, verify_enrolled=True):
                     course_id,
                     depth=depth
                 )
-                print get_required_content(course_id, request.user)
+                if not has_access(request.user, 'view_courseware_with_prerequisites', course):
+                    raise Http404("Pre-requisites not met")
+                required_content = get_required_content(course, request.user)
+                if required_content:
+                    message = "Required content: {}".format(required_content)
+                    raise Http404(message)
                 return func(self, request, course=course, *args, **kwargs)
         return _wrapper
     return _decorator
