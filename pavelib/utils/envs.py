@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import sys
 import json
+import uuid
 from lazy import lazy
 from path import path
 import memcache
@@ -20,11 +21,20 @@ class Env(object):
 
     # Reports Directory
     REPORT_DIR = REPO_ROOT / 'reports'
+    BOK_CHOY_LOG_DIR = REPO_ROOT / "test_root" / "log"
+
+    # If set, put reports for run in "unique" directories.
+    # The main purpose of this is to ensure that the reports can be 'slurped'
+    # in the main jenkins flow job without overwriting the reports from other
+    # build steps. For local development/testing, this shouldn't be needed.
+    if os.environ.get("UNIQUE_TEST_REPORT_DIR", False):
+        REPORT_DIR = REPORT_DIR / uuid.uuid4().hex
+        BOK_CHOY_LOG_DIR = BOK_CHOY_LOG_DIR /uuid.uuid4().hex
+
     METRICS_DIR = REPORT_DIR / 'metrics'
 
     # Bok_choy dirs
     BOK_CHOY_DIR = REPO_ROOT / "common" / "test" / "acceptance"
-    BOK_CHOY_LOG_DIR = REPO_ROOT / "test_root" / "log"
     BOK_CHOY_REPORT_DIR = REPORT_DIR / "bok_choy"
     BOK_CHOY_COVERAGERC = BOK_CHOY_DIR / ".coveragerc"
 
