@@ -36,14 +36,14 @@
                 'success': gettext('Your changes have been saved.')
             },
 
-            initialize: function (options) {
+            initialize: function () {
 
                 this.template = _.template($(this.templateSelector).text());
 
                 this.helpMessage = this.options.helpMessage || '';
                 this.showMessages = _.isUndefined(this.options.showMessages) ? true : this.options.showMessages;
 
-                _.bindAll(this, 'modelValue', 'modelValueIsSet', 'message', 'getMessage', 'title',
+                _.bindAll(this, 'modelValue', 'modelValueIsSet', 'showNotificationMessage', 'getMessage', 'title',
                           'showHelpMessage', 'showInProgressMessage', 'showSuccessMessage', 'showErrorMessage');
             },
 
@@ -53,25 +53,6 @@
 
             modelValueIsSet: function() {
                 return (this.modelValue() === true);
-            },
-
-            notification: function(message) {
-                return this.$('.u-field-message-notification').html(message);
-            },
-
-            help: function(message) {
-                return this.$('.u-field-message-help').html(message);
-            },
-
-            message: function (message, notification) {
-                notification = _.isUndefined(notification) ? true : notification;
-                if (notification) {
-                    this.help('');
-                    this.notification(message);
-                } else {
-                    this.notification('');
-                    this.help(message);
-                }
             },
 
             title: function (text) {
@@ -87,25 +68,34 @@
                 return this.indicators[message_status];
             },
 
+            showHelpMessage: function (message) {
+                if (_.isUndefined(message) || _.isNull(message)) {
+                    message = this.helpMessage;
+                }
+                this.$('.u-field-message-notification').html('');
+                return this.$('.u-field-message-help').html(message);
+            },
+
+            showNotificationMessage: function(message) {
+                this.$('.u-field-message-help').html('');
+                return this.$('.u-field-message-notification').html(message);
+            },
+
             showCanEditMessage: function(show) {
                 if (!_.isUndefined(show) && show) {
-                    this.message(this.getMessage('canEdit'));
+                    this.showNotificationMessage(this.getMessage('canEdit'));
                 } else {
-                    this.message('');
+                    this.showNotificationMessage('');
                 }
             },
 
-            showHelpMessage: function () {
-                this.message(this.helpMessage, false);
-            },
-
             showInProgressMessage: function () {
-                this.message(this.getMessage('inProgress'));
+                this.showNotificationMessage(this.getMessage('inProgress'));
             },
 
             showSuccessMessage: function () {
                 var successMessage = this.getMessage('success');
-                this.message(successMessage);
+                this.showNotificationMessage(successMessage);
 
                 if (this.options.refreshPageOnSave) {
                     document.location.reload();
@@ -117,7 +107,7 @@
                 this.lastSuccessMessageContext = context;
 
                 setTimeout(function () {
-                    if ((context === view.lastSuccessMessageContext) && (view.notification().html() == successMessage)) {
+                    if ((context === view.lastSuccessMessageContext) && (view.showNotificationMessage().html() == successMessage)) {
                         view.showHelpMessage();
                     }
                 }, messageRevertDelay);
@@ -131,12 +121,12 @@
                                 errors.field_errors[this.options.valueAttribute].user_message
                             ),
                             message = this.indicators.validationError + validationErrorMessage;
-                        this.message(message);
+                        this.showNotificationMessage(message);
                     } catch (error) {
-                        this.message(this.getMessage('error'));
+                        this.showNotificationMessage(this.getMessage('error'));
                     }
                 } else {
-                    this.message(this.getMessage('error'));
+                    this.showNotificationMessage(this.getMessage('error'));
                 }
             }
         });

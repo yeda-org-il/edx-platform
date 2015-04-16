@@ -63,23 +63,13 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
             expect(view.$('.u-field-title').text().trim()).toContain(expectedTitle);
         };
 
-        var expectTitleAndMessageToContain = function(view, expectedTitle, expectedMessage, notification) {
-            expectTitleToContain(view, expectedTitle);
-            notification = _.isUndefined(notification) ? true : notification;
-            if (notification) {
-                expect(view.$('.u-field-message-notification').text().trim()).toContain(expectedMessage);
-            } else {
-                expect(view.$('.u-field-message-help').text().trim()).toContain(expectedMessage);
-            }
+        var expectMessageContains = function(view, expectedText) {
+            expect(view.$('.u-field-message').html()).toContain(expectedText);
         };
 
-        var expectMessageContains = function(view, expectedText, notification) {
-            notification = _.isUndefined(notification) ? true : notification;
-            if (notification) {
-                expect(view.$('.u-field-message-notification').html()).toContain(expectedText);
-            } else {
-                expect(view.$('.u-field-message-help').html()).toContain(expectedText);
-            }
+        var expectTitleAndMessageToContain = function(view, expectedTitle, expectedMessage) {
+            expectTitleToContain(view, expectedTitle);
+            expectMessageContains(view, expectedMessage);
         };
 
         var expectAjaxRequestWithData = function(requests, data) {
@@ -92,11 +82,11 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
 
             var message = 'Here to help!';
 
-            view.message(message, false);
-            expectMessageContains(view, message, false);
+            view.showHelpMessage(message);
+            expectMessageContains(view, message);
 
             view.showHelpMessage();
-            expectMessageContains(view, view.helpMessage, false);
+            expectMessageContains(view, view.helpMessage);
 
             view.showInProgressMessage();
             expectMessageContains(view, view.indicators.inProgress);
@@ -121,19 +111,19 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
 
         var verifySuccessMessageReset = function (view) {
             view.showHelpMessage();
-            expectMessageContains(view, view.helpMessage, false);
+            expectMessageContains(view, view.helpMessage);
             view.showSuccessMessage();
             expectMessageContains(view, view.indicators.success);
             jasmine.Clock.tick(5000);
             // Message gets reset
-            expectMessageContains(view, view.helpMessage, false);
+            expectMessageContains(view, view.helpMessage);
 
             view.showSuccessMessage();
             expectMessageContains(view, view.indicators.success);
             // But if we change the message, it should not get reset.
-            view.message("Do not reset this!", false);
+            view.showHelpMessage("Do not reset this!");
             jasmine.Clock.tick(5000);
-            expectMessageContains(view, "Do not reset this!", false);
+            expectMessageContains(view, "Do not reset this!");
         };
 
         var verifyEditableField = function (view, data, requests) {

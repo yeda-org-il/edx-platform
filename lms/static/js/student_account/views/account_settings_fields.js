@@ -36,7 +36,7 @@
                         view.showSuccessMessage();
                     },
                     error: function () {
-                        view.message(
+                        view.showHelpMessage(
                             view.indicators.error +
                             gettext(
                                 'You must sign out of edX and sign back in before your language ' +
