@@ -165,6 +165,7 @@ class DashboardPage(PageObject):
 
     def _changed_lang_promise(self, code):
         def _check_func():
+            self.wait_for_element_presence(self.q(css='select[name="language"]'), 'wait for language selector to be present')
             language_is_selected = self.q(css='select[name="language"] option[value="{}"]'.format(code)).selected
             modal_is_visible = self.q(css='section#change_language.modal').visible
             return (language_is_selected and not modal_is_visible)
