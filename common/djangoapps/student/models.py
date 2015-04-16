@@ -351,7 +351,8 @@ def user_profile_post_save_callback(sender, **kwargs):
         user_profile.user,
         USER_SETTINGS_CHANGED_EVENT_NAME,
         sender._meta.db_table,
-        excluded_fields=['meta']
+        excluded_fields=['meta'],
+        signal=kwargs.get('signal'),
     )
 
 

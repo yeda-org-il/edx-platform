@@ -45,7 +45,9 @@ def get_changed_fields_dict(instance, model_class):
         return changed_fields
 
 
-def emit_field_changed_events(instance, user, event_name, db_table, excluded_fields=None, hidden_fields=None):
+def emit_field_changed_events(
+        instance, user, event_name, db_table, excluded_fields=None, hidden_fields=None, signal=None
+):
     """
     For the given model instance, emit a setting changed event the fields that
     have changed since the last save.
@@ -96,6 +98,10 @@ def emit_field_changed_events(instance, user, event_name, db_table, excluded_fie
                     'old': clean_field(field_name, changed_fields[field_name]),
                     'new': clean_field(field_name, getattr(instance, field_name)),
                     "user_id": user.id,
-                    "table": db_table
+                    "table": db_table,
+                    "instance_id": id(instance),
+                    "changed_fields": changed_fields.keys(),
+                    "changed_fields_id": id(changed_fields),
+                    "signal_id": id(signal),
                 }
             )
