@@ -262,6 +262,8 @@ $sequence--border-color: #C8C8C8;
 
     // CASE: right to left layout
     @include rtl {
+      left: auto;
+      right: 0;
       background-image: url('../images/sequence-nav/next-icon.png');
     }
   }
@@ -278,6 +280,8 @@ $sequence--border-color: #C8C8C8;
 
     // CASE: right to left layout
     @include rtl {
+      right: auto;
+      left: 0;
       background-image: url('../images/sequence-nav/previous-icon.png');
     }
   }
